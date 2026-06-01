@@ -77,10 +77,11 @@
                     <thead class="table-light">
                         <tr>
                             <th style="width: 12%">公演日 / 時間</th>
-                            <th style="width: 25%">公演タイトル</th>
+                            <th style="width: 23%">公演タイトル</th>
                             <th style="width: 15%">劇場 / 座席</th>
-                            <th style="width: 18%">出演者</th>
-                            <th style="width: 30%">メモ・感想</th>
+                            <th style="width: 15%">出演者</th>
+                            <th style="width: 25%">メモ・感想</th>
+                            <th style="width: 10%">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -97,10 +98,15 @@
                             </td>
                             <td><span class="badge bg-light text-dark border text-wrap text-start">{{ log.handler }}</span></td>
                             <td class="text-muted small" style="white-space: pre-wrap;">{{ log.memo }}</td>
+                            <td>
+                                <form action="/delete/{{ log.rowid }}" method="POST" onsubmit="return confirm('この観劇記録を本当に削除しますか？');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;">削除</button>
+                                </form>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">記録が見つかりませんでした。</td>
+                            <td colspan="6" class="text-center text-muted py-4">記録が見つかりませんでした。</td>
                         </tr>
                         {% endfor %}
                     </tbody>
