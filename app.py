@@ -37,7 +37,7 @@ def index():
 
         if date and title:
             if current_edit_id:
-                # 【新処理】edit_idがあれば「新しく追加」ではなく「既存の上書き修正」
+                # 既存の上書き修正
                 conn.execute(
                     """UPDATE logs SET 
                        date=?, time=?, title=?, theater=?, seat=?, handler=?, memo=? 
@@ -53,7 +53,7 @@ def index():
             conn.commit()
             return redirect('/')
 
-    # 検索・一覧表示処理
+    # 【修正箇所】通常時も検索時も、必ず「rowid」を一緒に引っ張ってくるように統一
     if search_query:
         logs = conn.execute(
             """SELECT *, rowid FROM logs WHERE 
