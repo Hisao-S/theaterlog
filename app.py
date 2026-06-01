@@ -18,7 +18,7 @@ def index():
     conn = get_db_connection()
     search_query = request.args.get('search', '')
     
-    # 記録の追加処理（以前の項目をすべて網羅）
+    # 記録の追加処理
     if request.method == 'POST':
         date = request.form['date']
         time = request.form['time']
@@ -36,7 +36,7 @@ def index():
             conn.commit()
             return redirect('/')
 
-    # 検索処理（タイトル、劇場、メモ、出演者すべてから探せるように強化）
+    # 検索処理
     if search_query:
         logs = conn.execute(
             """SELECT * FROM logs WHERE 
@@ -45,10 +45,20 @@ def index():
             (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
         ).fetchall()
     else:
-        logs = conn.execute('SELECT * FROM logs ORDER BY date DESC').fetchall()
+        logs = conn.execute('SELECT *, rowid FROM logs ORDER BY date DESC').fetchall() # rowid(データの背番号)を取得
         
     conn.close()
     return render_template('index.html', logs=logs, search_query=search_query)
+
+# 【新機能】データを削除する専用のページ（ルート）
+@app.route('/delete/<int:log_id>', methods=['POST'])
+def delete_log(log_id):
+    conn = get_db_connection()
+    # 指定された背番号（rowid）のデータを削除
+    conn.execute('DELETE FROM logs WHERE rowid = ?', (log_id,))
+    conn.commit()
+    conn.close()
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
