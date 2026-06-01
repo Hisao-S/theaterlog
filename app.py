@@ -18,26 +18,31 @@ def index():
     conn = get_db_connection()
     search_query = request.args.get('search', '')
     
-    # 記録の追加処理
+    # 記録の追加処理（以前の項目をすべて網羅）
     if request.method == 'POST':
         date = request.form['date']
+        time = request.form['time']
         title = request.form['title']
-        actor = request.form['actor']
+        theater = request.form['theater']
+        seat = request.form['seat']
+        handler = request.form['handler']
         memo = request.form['memo']
         
         if date and title:
             conn.execute(
-                'INSERT INTO logs (date, title, actor, memo) VALUES (?, ?, ?, ?)',
-                (date, title, actor, memo)
+                'INSERT INTO logs (date, time, title, theater, seat, handler, memo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (date, time, title, theater, seat, handler, memo)
             )
             conn.commit()
             return redirect('/')
 
-    # 検索・一覧取得処理
+    # 検索処理（タイトル、劇場、メモ、出演者すべてから探せるように強化）
     if search_query:
         logs = conn.execute(
-            "SELECT * FROM logs WHERE title LIKE ? OR actor LIKE ? OR memo LIKE ? ORDER BY date DESC",
-            (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
+            """SELECT * FROM logs WHERE 
+               title LIKE ? OR theater LIKE ? OR memo LIKE ? OR handler LIKE ? 
+               ORDER BY date DESC""",
+            (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
         ).fetchall()
     else:
         logs = conn.execute('SELECT * FROM logs ORDER BY date DESC').fetchall()
