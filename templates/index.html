@@ -25,7 +25,7 @@
         <div class="col-md-3 mb-4">
             <div class="card p-4">
                 <h5 class="card-title mb-3 fw-bold text-secondary">➕ 観劇記録を追加</h5>
-                <form method="POST">
+                <form method="POST" class="mb-4">
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">公演日 *</label>
                         <input type="date" name="date" class="form-control form-control-sm" required>
@@ -56,6 +56,12 @@
                     </div>
                     <button type="submit" class="btn btn-dark w-100 fw-bold btn-sm">記録を保存する</button>
                 </form>
+
+                <hr>
+                <div class="text-center">
+                    <p class="text-muted small mb-2">データのバックアップ・修正用</p>
+                    <a href="/download-db" class="btn btn-outline-success w-100 fw-bold btn-sm">📂 データベースを保存</a>
+                </div>
             </div>
         </div>
 
@@ -80,8 +86,7 @@
                             <th style="width: 25%">公演タイトル</th>
                             <th style="width: 15%">劇場 / 座席</th>
                             <th style="width: 18%">出演者</th>
-                            <th style="width: 22%">メモ・感想</th>
-                            <th style="width: 8%">操作</th>
+                            <th style="width: 30%">メモ・感想</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -98,17 +103,10 @@
                             </td>
                             <td><span class="badge bg-light text-dark border text-wrap text-start">{{ log.handler }}</span></td>
                             <td class="text-muted small" style="white-space: pre-wrap;">{{ log.memo }}</td>
-                            <td>
-                                <form method="POST" onsubmit="return confirm('この観劇記録を本当に削除しますか？');">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="log_id" value="{{ log.rowid }}">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;">削除</button>
-                                </form>
-                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">記録が見つかりませんでした。</td>
+                            <td colspan="5" class="text-center text-muted py-4">記録が見つかりませんでした。</td>
                         </tr>
                         {% endfor %}
                     </tbody>
