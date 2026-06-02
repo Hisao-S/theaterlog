@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, send_file, jsonify
+from flask import Flask, render_template, request, redirect, send_file
 
 app = Flask(__name__)
 
@@ -47,24 +47,35 @@ def index():
     else:
         logs = conn.execute('SELECT date, time, title, theater, seat, handler, memo FROM logs ORDER BY date DESC').fetchall()
         
-    # 📊 【新処理】グラフ用の集計データを取得
-    # 1. 年ごとの観劇本数（日付の先頭4文字を「年」としてグループ化）
+    # 📊 年ごとの観劇本数
     yearly_data = conn.execute(
         "SELECT SUBSTR(date, 1, 4) as year, COUNT(*) as count FROM logs WHERE date IS NOT NULL AND date != '' GROUP BY year ORDER BY year ASC"
     ).fetchall()
     
-    # 2. 出演者回数ランキング トップ5（空欄やカンマ区切りの簡易集計。部分一致ではなく全体一致ベース）
+    # 👑 【ロジック大修正】「出演者」列が空なら「メモ」列の文字も対象にして、とにかく名前が入っているものをカウントする
+    # SQLiteのCOALESCE(A, B)を使い、出演者枠が空（NULLや空文字）ならメモ枠のデータを集計対象にします
     actor_data = conn.execute(
-        "SELECT handler, COUNT(*) as count FROM logs WHERE handler IS NOT NULL AND handler != '' GROUP BY handler ORDER BY count DESC LIMIT 5"
+        """
+        SELECT 
+            CASE 
+                WHEN handler IS NOT NULL AND handler != '' THEN handler 
+                ELSE memo 
+            END as actor_name, 
+            COUNT(*) as count 
+        FROM logs 
+        WHERE (handler IS NOT NULL AND handler != '') OR (memo IS NOT NULL AND memo != '')
+        GROUP BY actor_name 
+        ORDER BY count DESC 
+        LIMIT 5
+        """
     ).fetchall()
 
     conn.close()
     
-    # HTML側に集計したデータを辞書の形で引き渡す
     stats = {
         'years': [row['year'] for row in yearly_data],
         'year_counts': [row['count'] for row in yearly_data],
-        'actors': [row['handler'] for row in actor_data],
+        'actors': [row['actor_name'][:10] for row in actor_data], # 長い感想対策で先頭10文字にカット
         'actor_counts': [row['count'] for row in actor_data]
     }
     
