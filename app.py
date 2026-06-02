@@ -1,10 +1,9 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, send_file
+from flask import Flask, render_template, request, redirect, send_file, jsonify
 
 app = Flask(__name__)
 
-# データベースの絶対パスを取得
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'theater_log.db')
 
@@ -48,18 +47,33 @@ def index():
     else:
         logs = conn.execute('SELECT date, time, title, theater, seat, handler, memo FROM logs ORDER BY date DESC').fetchall()
         
-    conn.close()
-    return render_template('index.html', logs=logs, search_query=search_query)
+    # 📊 【新処理】グラフ用の集計データを取得
+    # 1. 年ごとの観劇本数（日付の先頭4文字を「年」としてグループ化）
+    yearly_data = conn.execute(
+        "SELECT SUBSTR(date, 1, 4) as year, COUNT(*) as count FROM logs WHERE date IS NOT NULL AND date != '' GROUP BY year ORDER BY year ASC"
+    ).fetchall()
+    
+    # 2. 出演者回数ランキング トップ5（空欄やカンマ区切りの簡易集計。部分一致ではなく全体一致ベース）
+    actor_data = conn.execute(
+        "SELECT handler, COUNT(*) as count FROM logs WHERE handler IS NOT NULL AND handler != '' GROUP BY handler ORDER BY count DESC LIMIT 5"
+    ).fetchall()
 
-# 【新機能】データベースファイルを丸ごとダウンロードするページ
+    conn.close()
+    
+    # HTML側に集計したデータを辞書の形で引き渡す
+    stats = {
+        'years': [row['year'] for row in yearly_data],
+        'year_counts': [row['count'] for row in yearly_data],
+        'actors': [row['handler'] for row in actor_data],
+        'actor_counts': [row['count'] for row in actor_data]
+    }
+    
+    return render_template('index.html', logs=logs, search_query=search_query, stats=stats)
+
 @app.route('/download-db')
 def download_db():
     if os.path.exists(DB_PATH):
-        return send_file(
-            DB_PATH,
-            as_attachment=True,
-            download_name='theater_log.db' # パソコンに保存される時のファイル名
-        )
+        return send_file(DB_PATH, as_attachment=True, download_name='theater_log.db')
     return "データベースファイルが見つかりません。", 404
 
 if __name__ == '__main__':
