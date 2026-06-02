@@ -137,7 +137,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // 1. 年ごとの本数グラフ
+    // 1. 年ごとの本数グラフ（黒）
     const ctxYear = document.getElementById('yearlyChart').getContext('2d');
     new Chart(ctxYear, {
         type: 'bar',
@@ -156,10 +156,10 @@
         }
     });
 
-    // 2. 出演者トップ5グラフ
+    // 2. 出演者トップ5グラフ（青・横棒・バグ修正済）
     const ctxActor = document.getElementById('actorChart').getContext('2d');
     new Chart(ctxActor, {
-        type: 'index' === 'index' ? 'y' : 'y', // 横棒グラフにする設定
+        type: 'bar', // 正しいグラフタイプに修正
         data: {
             labels: {{ stats.actors|tojson }},
             datasets: [{
@@ -170,7 +170,7 @@
             }]
         },
         options: {
-            indexAxis: 'y',
+            indexAxis: 'y', // これで綺麗な横棒になります
             plugins: { legend: { display: false } },
             scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
