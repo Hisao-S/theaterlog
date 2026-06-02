@@ -19,19 +19,19 @@ def index():
     search_query = request.args.get('search', '')
     
     if request.method == 'POST':
-        # 画面から送られてきた処理の種類（追加か削除か）を判定
         action = request.form.get('action')
         
-        # 【削除処理】同じページ内で安全に実行
+        # 【削除処理】
         if action == 'delete':
             log_id = request.form.get('log_id')
             if log_id:
+                # 確実に届いた背番号のデータを削除
                 conn.execute('DELETE FROM logs WHERE rowid = ?', (log_id,))
                 conn.commit()
             conn.close()
             return redirect('/')
             
-        # 【追加処理】通常通り
+        # 【追加処理】
         else:
             date = request.form['date']
             time = request.form['time']
@@ -50,16 +50,16 @@ def index():
             conn.close()
             return redirect('/')
 
-    # データ一覧の取得（常にrowidを含める）
+    # 【修正箇所】検索している時も、していない時も、絶対に「rowid」という名前で背番号を抜き出すように明記
     if search_query:
         logs = conn.execute(
-            """SELECT *, rowid FROM logs WHERE 
+            """SELECT rowid, date, time, title, theater, seat, handler, memo FROM logs WHERE 
                title LIKE ? OR theater LIKE ? OR memo LIKE ? OR handler LIKE ? 
                ORDER BY date DESC""",
             (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
         ).fetchall()
     else:
-        logs = conn.execute('SELECT *, rowid FROM logs ORDER BY date DESC').fetchall()
+        logs = conn.execute('SELECT rowid, date, time, title, theater, seat, handler, memo FROM logs ORDER BY date DESC').fetchall()
         
     conn.close()
     return render_template('index.html', logs=logs, search_query=search_query)
