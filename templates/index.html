@@ -23,48 +23,38 @@
 <div class="container-fluid px-4">
     <div class="row">
         <div class="col-md-3 mb-4">
-            <div class="card p-4 {% if edit_log %}border border-primary{% endif %}">
-                <h5 class="card-title mb-3 fw-bold {% if edit_log %}text-primary{% else %}text-secondary{% endif %}">
-                    {% if edit_log %} 📝 記録を修正中 {% else %} ➕ 観劇記録を追加 {% endif %}
-                </h5>
+            <div class="card p-4">
+                <h5 class="card-title mb-3 fw-bold text-secondary">➕ 観劇記録を追加</h5>
                 <form method="POST">
-                    <input type="hidden" name="edit_id" value="{{ edit_log.rowid if edit_log else '' }}">
-                    
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">公演日 *</label>
-                        <input type="date" name="date" class="form-control form-control-sm" value="{{ edit_log.date if edit_log else '' }}" required>
+                        <input type="date" name="date" class="form-control form-control-sm" required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">時間（例: 13:00 / マチネ）</label>
-                        <input type="text" name="time" class="form-control form-control-sm" placeholder="13:00" value="{{ edit_log.time if edit_log else '' }}">
+                        <input type="text" name="time" class="form-control form-control-sm" placeholder="13:00">
                     </div>
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">公演タイトル *</label>
-                        <input type="text" name="title" class="form-control form-control-sm" placeholder="舞台「◯◯」" value="{{ edit_log.title if edit_log else '' }}" required>
+                        <input type="text" name="title" class="form-control form-control-sm" placeholder="舞台「◯◯」" required>
                     </div>
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">劇場</label>
-                        <input type="text" name="theater" class="form-control form-control-sm" placeholder="◯◯劇場" value="{{ edit_log.theater if edit_log else '' }}">
+                        <input type="text" name="theater" class="form-control form-control-sm" placeholder="◯◯劇場">
                     </div>
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">座席</label>
-                        <input type="text" name="seat" class="form-control form-control-sm" placeholder="1階10列15番" value="{{ edit_log.seat if edit_log else '' }}">
+                        <input type="text" name="seat" class="form-control form-control-sm" placeholder="1階10列15番">
                     </div>
                     <div class="mb-2">
                         <label class="form-label text-muted small fw-bold">出演者</label>
-                        <input type="text" name="handler" class="form-control form-control-sm" placeholder="出演者名など" value="{{ edit_log.handler if edit_log else '' }}">
+                        <input type="text" name="handler" class="form-control form-control-sm" placeholder="出演者名など">
                     </div>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">メモ・感想</label>
-                        <textarea name="memo" class="form-control form-control-sm" rows="3" placeholder="感想など">{{ edit_log.memo if edit_log else '' }}</textarea>
+                        <textarea name="memo" class="form-control form-control-sm" rows="3" placeholder="感想など"></textarea>
                     </div>
-                    
-                    <button type="submit" class="btn {% if edit_log %}btn-primary{% else %}btn-dark{% endif %} w-100 fw-bold btn-sm">
-                        {% if edit_log %} 修正内容を保存する {% else %} 記録を保存する {% endif %}
-                    </button>
-                    {% if edit_log %}
-                        <a href="/" class="btn btn-outline-secondary w-100 btn-sm fw-bold mt-2">キャンセル</a>
-                    {% endif %}
+                    <button type="submit" class="btn btn-dark w-100 fw-bold btn-sm">記録を保存する</button>
                 </form>
             </div>
         </div>
@@ -87,16 +77,16 @@
                     <thead class="table-light">
                         <tr>
                             <th style="width: 12%">公演日 / 時間</th>
-                            <th style="width: 23%">公演タイトル</th>
+                            <th style="width: 25%">公演タイトル</th>
                             <th style="width: 15%">劇場 / 座席</th>
-                            <th style="width: 15%">出演者</th>
-                            <th style="width: 23%">メモ・感想</th>
-                            <th style="width: 12%">操作</th>
+                            <th style="width: 18%">出演者</th>
+                            <th style="width: 22%">メモ・感想</th>
+                            <th style="width: 8%">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for log in logs %}
-                        <tr {% if edit_log and edit_log.rowid == log.rowid %}class="table-primary-light" style="background-color: #e6f2ff;"{% endif %}>
+                        <tr>
                             <td>
                                 <div class="fw-bold text-dark">{{ log.date }}</div>
                                 <div class="text-muted small">{{ log.time }}</div>
@@ -109,12 +99,11 @@
                             <td><span class="badge bg-light text-dark border text-wrap text-start">{{ log.handler }}</span></td>
                             <td class="text-muted small" style="white-space: pre-wrap;">{{ log.memo }}</td>
                             <td>
-                                <div class="d-flex gap-1">
-                                    <a href="/?edit={{ log.rowid }}" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size: 0.8rem;">編集</a>
-                                    <form action="/delete/{{ log.rowid }}" method="POST" onsubmit="return confirm('この観劇記録を本当に削除しますか？');">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;">削除</button>
-                                    </form>
-                                </div>
+                                <form method="POST" onsubmit="return confirm('この観劇記録を本当に削除しますか？');">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="log_id" value="{{ log.rowid }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 0.8rem;">削除</button>
+                                </form>
                             </td>
                         </tr>
                         {% else %}
