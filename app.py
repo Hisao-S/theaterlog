@@ -17,43 +17,40 @@ def get_db_connection():
 def index():
     conn = get_db_connection()
     search_query = request.args.get('search', '')
-    edit_id = request.args.get('edit', '')  # 編集ボタンが押されたデータのIDを取得
     
-    edit_log = None
-    if edit_id:
-        # 編集対象のデータを1件だけ取得してフォームに仕込む用
-        edit_log = conn.execute('SELECT *, rowid FROM logs WHERE rowid = ?', (edit_id,)).fetchone()
-
-    # 記録の「追加」または「更新」処理
     if request.method == 'POST':
-        date = request.form['date']
-        time = request.form['time']
-        title = request.form['title']
-        theater = request.form['theater']
-        seat = request.form['seat']
-        handler = request.form['handler']
-        memo = request.form['memo']
-        current_edit_id = request.form.get('edit_id', '')
-
-        if date and title:
-            if current_edit_id:
-                # 既存の上書き修正
-                conn.execute(
-                    """UPDATE logs SET 
-                       date=?, time=?, title=?, theater=?, seat=?, handler=?, memo=? 
-                       WHERE rowid=?""",
-                    (date, time, title, theater, seat, handler, memo, current_edit_id)
-                )
-            else:
-                # 通常の新規追加
+        # 画面から送られてきた処理の種類（追加か削除か）を判定
+        action = request.form.get('action')
+        
+        # 【削除処理】同じページ内で安全に実行
+        if action == 'delete':
+            log_id = request.form.get('log_id')
+            if log_id:
+                conn.execute('DELETE FROM logs WHERE rowid = ?', (log_id,))
+                conn.commit()
+            conn.close()
+            return redirect('/')
+            
+        # 【追加処理】通常通り
+        else:
+            date = request.form['date']
+            time = request.form['time']
+            title = request.form['title']
+            theater = request.form['theater']
+            seat = request.form['seat']
+            handler = request.form['handler']
+            memo = request.form['memo']
+            
+            if date and title:
                 conn.execute(
                     'INSERT INTO logs (date, time, title, theater, seat, handler, memo) VALUES (?, ?, ?, ?, ?, ?, ?)',
                     (date, time, title, theater, seat, handler, memo)
                 )
-            conn.commit()
+                conn.commit()
+            conn.close()
             return redirect('/')
 
-    # 【修正箇所】通常時も検索時も、必ず「rowid」を一緒に引っ張ってくるように統一
+    # データ一覧の取得（常にrowidを含める）
     if search_query:
         logs = conn.execute(
             """SELECT *, rowid FROM logs WHERE 
@@ -65,16 +62,7 @@ def index():
         logs = conn.execute('SELECT *, rowid FROM logs ORDER BY date DESC').fetchall()
         
     conn.close()
-    return render_template('index.html', logs=logs, search_query=search_query, edit_log=edit_log)
-
-# データを削除するページ
-@app.route('/delete/<int:log_id>', methods=['POST'])
-def delete_log(log_id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM logs WHERE rowid = ?', (log_id,))
-    conn.commit()
-    conn.close()
-    return redirect('/')
+    return render_template('index.html', logs=logs, search_query=search_query)
 
 if __name__ == '__main__':
     app.run(debug=True)
