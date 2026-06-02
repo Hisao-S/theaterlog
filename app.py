@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, send_file
 
 app = Flask(__name__)
 
@@ -18,51 +18,49 @@ def index():
     conn = get_db_connection()
     search_query = request.args.get('search', '')
     
+    # 記録の追加処理
     if request.method == 'POST':
-        action = request.form.get('action')
+        date = request.form['date']
+        time = request.form['time']
+        title = request.form['title']
+        theater = request.form['theater']
+        seat = request.form['seat']
+        handler = request.form['handler']
+        memo = request.form['memo']
         
-        # 【削除処理】
-        if action == 'delete':
-            log_id = request.form.get('log_id')
-            if log_id:
-                # 確実に届いた背番号のデータを削除
-                conn.execute('DELETE FROM logs WHERE rowid = ?', (log_id,))
-                conn.commit()
-            conn.close()
-            return redirect('/')
-            
-        # 【追加処理】
-        else:
-            date = request.form['date']
-            time = request.form['time']
-            title = request.form['title']
-            theater = request.form['theater']
-            seat = request.form['seat']
-            handler = request.form['handler']
-            memo = request.form['memo']
-            
-            if date and title:
-                conn.execute(
-                    'INSERT INTO logs (date, time, title, theater, seat, handler, memo) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    (date, time, title, theater, seat, handler, memo)
-                )
-                conn.commit()
-            conn.close()
-            return redirect('/')
+        if date and title:
+            conn.execute(
+                'INSERT INTO logs (date, time, title, theater, seat, handler, memo) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                (date, time, title, theater, seat, handler, memo)
+            )
+            conn.commit()
+        conn.close()
+        return redirect('/')
 
-    # 【修正箇所】検索している時も、していない時も、絶対に「rowid」という名前で背番号を抜き出すように明記
+    # データ一覧の取得
     if search_query:
         logs = conn.execute(
-            """SELECT rowid, date, time, title, theater, seat, handler, memo FROM logs WHERE 
+            """SELECT date, time, title, theater, seat, handler, memo FROM logs WHERE 
                title LIKE ? OR theater LIKE ? OR memo LIKE ? OR handler LIKE ? 
                ORDER BY date DESC""",
             (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
         ).fetchall()
     else:
-        logs = conn.execute('SELECT rowid, date, time, title, theater, seat, handler, memo FROM logs ORDER BY date DESC').fetchall()
+        logs = conn.execute('SELECT date, time, title, theater, seat, handler, memo FROM logs ORDER BY date DESC').fetchall()
         
     conn.close()
     return render_template('index.html', logs=logs, search_query=search_query)
+
+# 【新機能】データベースファイルを丸ごとダウンロードするページ
+@app.route('/download-db')
+def download_db():
+    if os.path.exists(DB_PATH):
+        return send_file(
+            DB_PATH,
+            as_attachment=True,
+            download_name='theater_log.db' # パソコンに保存される時のファイル名
+        )
+    return "データベースファイルが見つかりません。", 404
 
 if __name__ == '__main__':
     app.run(debug=True)
